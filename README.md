@@ -7,6 +7,7 @@
    - Docker plugin
    - Docker Pipeline plugin
    - Pipeline plugin
+   - SSH Agent plugin
 
 2. **Jenkins Configuration**
    - Go to Jenkins Dashboard
@@ -43,12 +44,12 @@
    - In the pipeline configuration:
      - Under "Pipeline" section, select "Pipeline script from SCM"
      - Select "Git" as SCM
-     - Enter Repository URL: https://github.com/arifhidayat65/gizmap.git
+     - Enter Repository URL: git@github.com:arifhidayat65/be-giz.git
      - Specify branch: */main
      - Script Path: Jenkinsfile
    - Click "Save"
 
-4. **First Time Setup**
+5. **First Time Setup**
    - After creating the pipeline, click "Build Now" to start the first build
    - Jenkins will automatically:
      - Clone the repository
@@ -57,7 +58,7 @@
      - Build Docker image
      - Deploy the application
 
-5. **Automatic Builds**
+6. **Automatic Builds**
    - The pipeline will automatically build when changes are pushed to the repository
    - You can also manually trigger builds from the Jenkins dashboard
 

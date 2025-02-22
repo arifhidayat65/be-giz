@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven 3'
-        jdk 'JDK 17'
-    }
-
     environment {
         GITHUB_REPO = 'https://github.com/arifhidayat65/be-giz.git'
         BRANCH = 'master'
@@ -17,10 +12,8 @@ pipeline {
             steps {
                 sh '''
                     echo "PATH = ${PATH}"
-                    echo "JAVA_HOME = ${JAVA_HOME}"
+                    echo "Workspace = ${WORKSPACE}"
                     java -version
-                    mvn -version
-                    docker version
                 '''
             }
         }
@@ -31,6 +24,41 @@ pipeline {
                 git branch: env.BRANCH,
                     url: env.GITHUB_REPO,
                     credentialsId: 'github-credentials'
+                
+                // Ensure .mvn directory exists and has proper permissions
+                sh '''
+                    if [ ! -d ".mvn" ]; then
+                        echo "Creating .mvn directory structure..."
+                        mkdir -p .mvn/wrapper
+                        chmod -R 755 .mvn
+                    fi
+                '''
+            }
+        }
+
+        stage('Prepare Maven') {
+            steps {
+                script {
+                    try {
+                        sh '''
+                            echo "Checking Maven wrapper..."
+                            if [ ! -f "mvnw" ]; then
+                                echo "Maven wrapper not found, downloading it..."
+                                mvn -N io.takari:maven:0.7.7:wrapper
+                            fi
+                            
+                            echo "Setting execute permissions..."
+                            chmod +x mvnw
+                            chmod +x .mvn/wrapper/maven-wrapper.jar || true
+                            
+                            echo "Verifying Maven wrapper..."
+                            ./mvnw --version
+                        '''
+                    } catch (Exception e) {
+                        echo "Maven preparation failed: ${e.getMessage()}"
+                        error("Maven preparation stage failed")
+                    }
+                }
             }
         }
 
@@ -39,11 +67,11 @@ pipeline {
                 script {
                     try {
                         sh '''
-                            echo "Building with Maven..."
-                            mvn clean package -DskipTests
+                            echo "Building with Maven wrapper..."
+                            ./mvnw clean package -DskipTests
                             
                             echo "Running tests..."
-                            mvn test
+                            ./mvnw test
                             
                             echo "Verifying target directory..."
                             ls -la target/

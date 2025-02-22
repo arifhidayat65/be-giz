@@ -12,6 +12,10 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - maven_home:/root/.m2
+    environment:
+      - MAVEN_HOME=/usr/share/maven
+      - MAVEN_CONFIG=/root/.m2
     networks:
       - gizmap-network
 
@@ -56,6 +60,7 @@ services:
 volumes:
   postgres_data:
   jenkins_home:
+  maven_home:
 
 networks:
   gizmap-network:

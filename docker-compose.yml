@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: gizmap-jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - gizmap-network
+
   postgres:
     image: postgres:15-alpine
     container_name: gizmap-postgres
@@ -24,13 +38,13 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gizmap
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-    ports:
-      - "8080:8080"
-    networks:
-      - gizmap-network
+    network_mode: "host"
+    environment:
+      SERVER_ADDRESS: 192.168.1.12
 
 volumes:
   postgres_data:
+  jenkins_home:
 
 networks:
   gizmap-network:

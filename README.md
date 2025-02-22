@@ -14,7 +14,29 @@
    - Install the required plugins if not already installed
    - Restart Jenkins after plugin installation
 
-3. **Create Jenkins Pipeline**
+3. **GitHub SSH Credentials Setup**
+   - Generate SSH key pair if you don't have one:
+     ```bash
+     ssh-keygen -t ed25519 -C "your-email@example.com"
+     ```
+   - Add the public key to your GitHub account:
+     - Copy the content of ~/.ssh/id_ed25519.pub
+     - Go to GitHub > Settings > SSH and GPG keys > New SSH key
+     - Paste your public key and save
+
+   - Add SSH private key to Jenkins:
+     - Go to Jenkins Dashboard
+     - Navigate to "Manage Jenkins" > "Manage Credentials"
+     - Click on "System" and "Global credentials"
+     - Click "Add Credentials"
+     - Select "SSH Username with private key" from the "Kind" dropdown
+     - Set ID as "github-credentials"
+     - Set Username as "git"
+     - Under "Private Key", select "Enter directly"
+     - Paste the content of your private key file (~/.ssh/id_ed25519)
+     - Click "OK" to save
+
+4. **Create Jenkins Pipeline**
    - Click "New Item" on Jenkins Dashboard
    - Enter a name for your pipeline (e.g., "gizmap-pipeline")
    - Select "Pipeline" and click OK

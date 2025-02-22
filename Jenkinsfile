@@ -1,12 +1,30 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven 3'
+        jdk 'JDK 17'
+    }
+
     environment {
         GITHUB_REPO = 'https://github.com/arifhidayat65/be-giz.git'
         BRANCH = 'master'
+        DOCKER_IMAGE = 'gizmap-app'
     }
 
     stages {
+        stage('Environment Info') {
+            steps {
+                sh '''
+                    echo "PATH = ${PATH}"
+                    echo "JAVA_HOME = ${JAVA_HOME}"
+                    java -version
+                    mvn -version
+                    docker version
+                '''
+            }
+        }
+
         stage('Checkout') {
             steps {
                 cleanWs()
@@ -16,48 +34,23 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build and Test') {
             steps {
                 script {
                     try {
-                        // Debug: List directory contents
-                        sh 'ls -la'
-                        
-                        // Ensure mvnw exists and is executable
                         sh '''
-                            if [ ! -f "mvnw" ]; then
-                                echo "Maven wrapper not found. Creating it..."
-                                mvn -N wrapper:wrapper
-                            fi
-                            chmod +x mvnw
-                        '''
-                        
-                        // Build with debug output
-                        sh './mvnw clean package -DskipTests -X'
-                        
-                        // Verify target directory and JAR file
-                        sh '''
-                            echo "Checking target directory..."
+                            echo "Building with Maven..."
+                            mvn clean package -DskipTests
+                            
+                            echo "Running tests..."
+                            mvn test
+                            
+                            echo "Verifying target directory..."
                             ls -la target/
                         '''
                     } catch (Exception e) {
-                        echo "Build failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error("Build stage failed")
-                    }
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                script {
-                    try {
-                        sh './mvnw test'
-                    } catch (Exception e) {
-                        echo "Tests failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error("Test stage failed")
+                        echo "Build or test failed: ${e.getMessage()}"
+                        error("Build and test stage failed")
                     }
                 }
             }
@@ -67,10 +60,15 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'docker build -t gizmap-app .'
+                        sh '''
+                            echo "Building Docker image..."
+                            docker build -t ${DOCKER_IMAGE} .
+                            
+                            echo "Verifying Docker image..."
+                            docker images | grep ${DOCKER_IMAGE}
+                        '''
                     } catch (Exception e) {
                         echo "Docker build failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
                         error("Docker build stage failed")
                     }
                 }
@@ -81,11 +79,21 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'docker-compose down || true'
-                        sh 'docker-compose up -d'
+                        sh '''
+                            echo "Stopping existing containers..."
+                            docker-compose down || true
+                            
+                            echo "Starting new containers..."
+                            docker-compose up -d
+                            
+                            echo "Verifying containers..."
+                            docker-compose ps
+                            
+                            echo "Checking container logs..."
+                            docker-compose logs --tail=50
+                        '''
                     } catch (Exception e) {
                         echo "Deployment failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
                         error("Deploy stage failed")
                     }
                 }
@@ -94,14 +102,19 @@ pipeline {
     }
 
     post {
+        always {
+            echo 'Pipeline finished'
+            cleanWs()
+        }
         success {
             echo 'Build and deployment successful!'
         }
         failure {
-            echo 'Build or deployment failed.'
-        }
-        always {
-            cleanWs()
+            echo '''
+                Build or deployment failed!
+                Cleaning up...
+            '''
+            sh 'docker-compose down || true'
         }
     }
 }

@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_REPO = 'https://github.com/arifhidayat65/gizmap.git'
+        // Define credentials ID for GitHub
+        GITHUB_CREDENTIALS = credentials('github-credentials')
+        GITHUB_REPO = 'git@github.com:arifhidayat65/be-giz.git'
         BRANCH = 'main'
     }
 
@@ -11,9 +13,11 @@ pipeline {
             steps {
                 // Clean workspace before building
                 cleanWs()
-                // Checkout code from GitHub
-                git branch: env.BRANCH,
-                    url: env.GITHUB_REPO
+                // Checkout code from GitHub with SSH
+                sshagent(['github-credentials']) {
+                    git branch: env.BRANCH,
+                        url: env.GITHUB_REPO
+                }
             }
         }
 

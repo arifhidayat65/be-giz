@@ -1,10 +1,12 @@
 package app.service;
 
+import app.dto.ApiResponse;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.model.User;
 import app.repository.UserRepository;
 import app.security.JwtTokenProvider;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,7 +32,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public LoginResponse login(LoginRequest loginRequest) {
+    public ApiResponse<LoginResponse> login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
                 loginRequest.getUsername(),
@@ -40,20 +42,22 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtTokenProvider.generateToken(authentication);
+        LoginResponse loginResponse = new LoginResponse(jwt);
         
-        return new LoginResponse(jwt);
+        return ApiResponse.success("Login successful", loginResponse);
     }
 
-    public User registerUser(User user) {
+    public ApiResponse<User> registerUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("Username is already taken!");
+            return ApiResponse.error("Username is already taken!");
         }
 
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email is already in use!");
+            return ApiResponse.error("Email is already in use!");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return ApiResponse.success("User registered successfully", savedUser, HttpStatus.CREATED);
     }
 }

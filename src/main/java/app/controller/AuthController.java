@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.dto.ApiResponse;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.model.Role;
@@ -19,24 +20,24 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        LoginResponse loginResponse = authService.login(loginRequest);
-        return ResponseEntity.ok(loginResponse);
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
+        ApiResponse<LoginResponse> response = authService.login(loginRequest);
+        return ResponseEntity.status(response.getCode()).body(response);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<User>> registerUser(@RequestBody User user) {
         // Default role for new registrations is USER
         user.setRole(Role.ROLE_USER);
-        User result = authService.registerUser(user);
-        return ResponseEntity.ok("User registered successfully");
+        ApiResponse<User> response = authService.registerUser(user);
+        return ResponseEntity.status(response.getCode()).body(response);
     }
 
     @PostMapping("/register/admin")
-    public ResponseEntity<?> registerAdmin(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<User>> registerAdmin(@RequestBody User user) {
         // Admin registration endpoint (should be secured in production)
         user.setRole(Role.ROLE_ADMIN);
-        User result = authService.registerUser(user);
-        return ResponseEntity.ok("Admin registered successfully");
+        ApiResponse<User> response = authService.registerUser(user);
+        return ResponseEntity.status(response.getCode()).body(response);
     }
 }
